@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sewing Machine Activity</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    
+  </style>
+</head>
+<body>
+  <!-- Popup div -->
+  <div id="popup"></div>
+
+  <div class="container">
+    <h1>SEWING MACHINE ACTIVITY</h1>
+
+    <div class="status-bar">
+      <p>Last Update : <span id="lastUpdate"></span> <span class="status">🟢 Connected</span></p>
+      <hr>
+    </div>
+
+    <div class="summary">
+      <div class="count-box">
+        <h2 id="moveCount">0</h2>
+        <p>Machine Move Today</p>
+      </div>
+    </div>
+
+    <div id="machineGrid">
+      <% 
+        const lines = [
+          ["1A","1B"],["2A","2B"],["3A","3B"],["4A"],
+          ["5A","5B"],["6A","6B"],["7A","7B","7C"],["8A"],
+          ["10A","10B"],["11A","11B"],["12B"],["13"],["14"]
+        ];
+        const lineNumbers = [1,2,3,4,5,6,7,8,10,11,12,13,14];
+
+        const grouped = {};
+        mesin.forEach(m => {
+          const line = m.line_sekarang;
+          if (!grouped[line]) grouped[line] = [];
+          grouped[line].push(m);
+        });
+      %>
+
+      <% lines.forEach((subLines, i) => { %>
+        <div class="line-section">
+          <h2>Line <%= lineNumbers[i] %></h2>
+          <% subLines.forEach(sub => { %>
+            <div class="subline-section">
+              <h3>Subline <%= sub %></h3>
+              <div class="card-container" id="container-<%= sub %>">
+                <% (grouped[sub] || []).forEach(m => { %>
+                  <div class="card" id="mesin-<%= m.id_mesin %>" data-status="<%= m.status_pindah %>" data-subline="<%= sub %>">
+                    <h4><%= m.line_sekarang %></h4>
+                    <p><%= m.merk_mesin %> - <%= m.nomer_seri_mesin %></p>
+                    <div class="machine-info">
+                      <strong>ID Mesin: <%= m.id_mesin %></strong><br>
+                      <span>Barcode: <%= m.kode_barcode %></span><br>
+                      <small>Update: <%= m.update_time ? new Date(m.update_time).toLocaleString() : '-' %></small>
+                    </div>
+                    <% if (m.status_pindah === 'Pindah') { %>
+                      <p class="move">🚚 Pindah dari <b><%= m.line_sebelumnya || '-' %></b> ke <b><%= m.line_sekarang %></b></p>
+                    <% } else { %>
+                      <p class="no-move">✓ Tidak ada perpindahan</p>
+                    <% } %>
+                  </div>
+                <% }) %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    function updateTime() {
+      document.getElementById('lastUpdate').innerText = new Date().toLocaleString();
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    async function updateMoveCount() {
+      try {
+        const res = await fetch('/count');
+        const data = await res.json();
+        document.getElementById('moveCount').innerText = data.total;
+      } catch (err) {
+        console.error('Gagal ambil count:', err);
+      }
+    }
+    setInterval(updateMoveCount, 5000);
+    updateMoveCount();
+
+    function showPopup(message) {
+      const popup = document.getElementById('popup');
+      popup.innerHTML = message;
+      popup.style.display = 'block';
+
+      setTimeout(() => {
+        popup.style.display = 'none';
+      }, 30000); // hilang setelah 30 detik
+    }
+
+    async function updateMachines() {
+      try {
+        const res = await fetch('/mesin-data');
+        const mesinData = await res.json();
+
+        mesinData.forEach(m => {
+          const card = document.getElementById(`mesin-${m.id_mesin}`);
+          const container = document.getElementById(`container-${m.line_sekarang}`);
+          if(card && container){
+            const prevStatus = card.dataset.status;
+            card.dataset.status = m.status_pindah;
+            card.querySelector('small').innerText = m.update_time ? new Date(m.update_time).toLocaleString() : '-';
+
+            const moveText = card.querySelector('.move, .no-move');
+            if(m.status_pindah === 'Pindah'){
+              moveText.className = 'move';
+              moveText.innerHTML = `🚚 Pindah dari <b>${m.line_sebelumnya || '-'}</b> ke <b>${m.line_sekarang}</b>`;
+              container.insertBefore(card, container.firstChild);
+
+              if(prevStatus !== 'Pindah') {
+                showPopup(`Mesin ${m.merk_mesin} (${m.nomer_seri_mesin}) pindah dari ${m.line_sebelumnya || '-'} ke ${m.line_sekarang}`);
+              }
+            } else {
+              moveText.className = 'no-move';
+              moveText.innerHTML = '✓ Tidak ada perpindahan';
+            }
+          }
+        });
+      } catch(err){ console.error('Gagal update mesin:', err); }
+    }
+
+    setInterval(updateMachines, 5000);
+
+    // === REALTIME MESIN BARU & UPDATE MESIN ===
+    socket.on('updateNow', () => {
+      updateMoveCount();
+      updateMachines();
+    });
+
+    socket.on('newMachine', (m) => {
+      const container = document.getElementById(`container-${m.line_sekarang}`);
+      if(!container) return;
+      if(document.getElementById(`mesin-${m.id_mesin}`)) return; // hindari duplikat
+
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = `mesin-${m.id_mesin}`;
+      card.dataset.status = m.status_pindah;
+      card.dataset.subline = m.line_sekarang;
+      card.innerHTML = `
+        <h4>${m.line_sekarang}</h4>
+        <p>${m.merk_mesin} - ${m.nomer_seri_mesin}</p>
+        <div class="machine-info">
+          <strong>ID Mesin: ${m.id_mesin}</strong><br>
+          <span>Barcode: ${m.kode_barcode}</span><br>
+          <small>Update: ${m.update_time ? new Date(m.update_time).toLocaleString() : '-'}</small>
+        </div>
+        ${m.status_pindah === 'Pindah' ?
+          `<p class="move">🚚 Pindah dari <b>${m.line_sebelumnya || '-'}</b> ke <b>${m.line_sekarang}</b></p>` :
+          `<p class="no-move">✓ Tidak ada perpindahan</p>`}
+      `;
+      container.insertBefore(card, container.firstChild);
+      updateMoveCount();
+
+      if(m.status_pindah === 'Pindah'){
+        showPopup(`Mesin ${m.merk_mesin} (${m.nomer_seri_mesin}) pindah dari ${m.line_sebelumnya || '-'} ke ${m.line_sekarang}`);
+      }
+    });
+  </script>
+</body>
+</html>

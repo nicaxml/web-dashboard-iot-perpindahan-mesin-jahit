@@ -1,0 +1,124 @@
+body {
+  background-color: #f8d9a0;
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  text-align: center;
+}
+
+h1 {
+  margin-top: 30px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.status-bar {
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status {
+  color: green;
+  font-weight: 600;
+}
+
+hr {
+  width: 200px;
+  margin: 5px auto;
+  border: 1px solid #1f1f1f;
+}
+
+.summary {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.count-box {
+  background-color: #a0b7ff;
+  color: white;
+  border-radius: 12px;
+  width: 180px;
+  padding: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.count-box h2 {
+  font-size: 28px;
+  margin: 0;
+}
+
+/* Card container horizontal scroll */
+.card-container {
+  display: flex;             /* susun horizontal */
+  gap: 10px;                 /* jarak antar mesin */
+  overflow-x: auto;          /* scroll horizontal */
+  padding: 5px 0;
+  scroll-behavior: smooth;
+}
+
+/* card styling */
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  padding: 8px;
+  font-size: 11px;
+  min-width: 150px;          /* ukuran minimal */
+  flex: 0 0 auto;            /* jangan shrink/grow */
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.machine-info {
+  background-color: #a0b7ff;
+  color: #000;
+  border-radius: 10px;
+  padding: 8px;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.move, .no-move {
+  color: #333;
+  font-size: 14px;
+}
+
+/* Scroll bar styling (optional) */
+.card-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.card-container::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 4px;
+}
+
+.card-container::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+}
+
+
+
+/* Popup notif */
+    #popup {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #fffae6;
+      border: 1px solid #f1c40f;
+      padding: 15px 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      z-index: 1000;
+      display: none;
+      font-weight: 600;
+      color: #333;
+      text-align: center;
+    }

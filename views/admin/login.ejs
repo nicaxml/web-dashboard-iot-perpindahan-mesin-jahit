@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Admin</title>
+  <style>
+    /* Warna latar belakang utama */
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background-color: #f9d49b; /* oranye pastel lembut */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    /* Judul utama */
+    h2 {
+      text-align: center;
+      font-weight: 700;
+      font-size: 20px;
+      color: #000;
+      margin-bottom: 30px;
+      line-height: 1.4;
+    }
+
+    /* Kotak form login */
+    .login-box {
+      background-color: #fff6cf; /* krem lembut */
+      padding: 40px 60px;
+      border-radius: 30px;
+      box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+    }
+
+    /* Baris input (Username & Password) */
+    .input-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 30px;
+      width: 100%;
+    }
+
+    .input-row label {
+      font-size: 20px;
+      font-weight: 500;
+      color: #000;
+      width: 110px;
+      text-align: right;
+    }
+
+    .input-row input {
+      width: 220px;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 25px;
+      background-color: #fff;
+      font-size: 18px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      outline: none;
+    }
+
+    .input-row input::placeholder {
+      color: #aaa;
+    }
+
+    /* Tombol login */
+    button {
+      background-color: #b3baff;
+      border: none;
+      color: #000;
+      font-size: 20px;
+      font-weight: 600;
+      border-radius: 20px;
+      padding: 10px 40px;
+      margin-top: 15px;
+      cursor: pointer;
+      transition: 0.3s;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    button:hover {
+      background-color: #9ea8ff;
+      transform: scale(1.05);
+    }
+
+    /* Link ke halaman utama */
+    .back-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: #000;
+      font-weight: bold;
+      text-decoration: none;
+      transition: 0.3s;
+      font-size: 14px;
+    }
+
+    .back-link:hover {
+      color: #2d6a4f;
+      text-decoration: underline;
+    }
+
+    /* Pesan error */
+    .error {
+      color: red;
+      font-size: 14px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    /* Responsif untuk layar kecil */
+    @media (max-width: 600px) {
+      .login-box {
+        padding: 30px;
+      }
+      .input-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .input-row label {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h2>SEWING MACHINE ACTIVITY<br>LOGIN ADMIN</h2>
+
+  <div class="login-box">
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <form action="/login" method="POST">
+      <div class="input-row">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="Username" required>
+      </div>
+      <div class="input-row">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="Password" required>
+      </div>
+      <button type="submit">Masuk</button>
+    </form>
+
+    <!-- Link kembali ke halaman utama -->
+    <a href="/" class="back-link">Kembali ke Halaman Utama</a>
+  </div>
+</body>
+</html>

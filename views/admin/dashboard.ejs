@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Arial", sans-serif;
+    }
+
+    body {
+      background-color: #f9cf96; 
+      display: flex;
+      height: 100vh;
+      color: #000;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      background-color: #fff2cc; 
+      width: 180px; 
+      padding: 20px 10px 10px 10px; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-radius: 0 20px 20px 0;
+    }
+
+    /* Sapaan di atas sidebar */
+    .sidebar .greeting {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .sidebar a {
+      display: block;
+      width: 85%;
+      margin: 10px 0;
+      margin-top: 15px; /* jarak awal dari sapaan */
+      padding: 8px 12px; 
+      text-align: center;
+      text-decoration: none;
+      color: #000;
+      font-size: 16px; 
+      font-weight: 600;
+      background-color: #c9d3ff; 
+      border-radius: 12px;
+      box-shadow: 0 0 3px rgba(0,0,0,0.1);
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .sidebar a:hover {
+      background-color: #aabaff;
+      transform: scale(1.05);
+    }
+
+    .sidebar a.logout {
+      background-color: #baff4d; 
+    }
+
+    .sidebar a.logout:hover {
+      background-color: #a3ff1f;
+    }
+
+    .sidebar a.active {
+      border-left: 4px solid #3b3bff; 
+      background-color: #aabaff; 
+      transform: scale(1.05);
+    }
+
+    /* ===== KONTEN ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start; 
+      text-align: center;
+      padding-top: 40px;
+    }
+
+    .top-text h1 {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .top-text .highlight {
+      text-decoration: underline; 
+      display: block;
+      margin-top: 5px;
+    }
+
+    .center-text {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center; 
+      align-items: center;     
+    }
+
+    .center-text h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .center-text p {
+      font-size: 20px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-around;
+        border-radius: 0;
+        padding: 10px;
+      }
+
+      .sidebar a {
+        font-size: 14px;
+        padding: 8px;
+        margin: 5px;
+        margin-top: 0; /* hapus margin-top di mobile */
+      }
+
+      .sidebar .greeting {
+        display: none; /* sembunyikan di mobile */
+      }
+
+      .top-text h1, .top-text .highlight {
+        font-size: 22px;
+      }
+
+      .center-text h2 {
+        font-size: 20px;
+      }
+
+      .center-text p {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="greeting">Hi, Admin Sewing</div>
+    <a href="/">Halaman Utama</a>
+    <a href="/admin/dashboard">Dashboard</a>
+    <a href="/admin/mesin">Mesin</a>
+    <a href="/admin/riwayat">Riwayat</a>
+    <a href="/admin/login" class="logout">Logout</a>
+  </div>
+
+  <div class="main">
+    <!-- Bagian atas -->
+    <div class="top-text">
+      <h1>DASHBOARD ADMIN</h1>
+      <h1 class="highlight">SEWING MACHINE ACTIVITY</h1>
+    </div>
+
+    <!-- Bagian tengah -->
+    <div class="center-text">
+      <h2>Selamat Datang, Admin</h2>
+      <p>Gunakan menu di sebelah kiri untuk navigasi.</p>
+    </div>
+  </div>
+
+  <script>
+    const sidebarLinks = document.querySelectorAll('.sidebar a');
+
+    sidebarLinks.forEach(link => {
+      if (link.href === window.location.href) {
+        link.classList.add('active');
+      }
+      link.addEventListener('click', () => {
+        sidebarLinks.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      });
+    });
+  </script>
+
+</body>
+</html>

@@ -6,9 +6,6 @@
   <title>Sewing Machine Activity</title>
   <link rel="stylesheet" href="/style.css">
   <script src="/socket.io/socket.io.js"></script>
-  <style>
-    
-  </style>
 </head>
 <body>
   <!-- Popup div -->
@@ -79,13 +76,32 @@
 
   <script>
     const socket = io();
+    const statusEl = document.querySelector('.status');
 
+    // === Indikator koneksi socket.io ===
+    socket.on('connect', () => {
+      statusEl.textContent = '🟢 Connected';
+      statusEl.style.color = 'green';
+    });
+
+    socket.on('disconnect', () => {
+      statusEl.textContent = '🔴 Disconnected';
+      statusEl.style.color = 'red';
+    });
+
+    socket.io.on('reconnect_attempt', () => {
+      statusEl.textContent = '🟡 Reconnecting...';
+      statusEl.style.color = 'orange';
+    });
+
+    // === Update waktu setiap detik ===
     function updateTime() {
       document.getElementById('lastUpdate').innerText = new Date().toLocaleString();
     }
     setInterval(updateTime, 1000);
     updateTime();
 
+    // === Ambil jumlah mesin pindah ===
     async function updateMoveCount() {
       try {
         const res = await fetch('/count');
@@ -98,6 +114,7 @@
     setInterval(updateMoveCount, 5000);
     updateMoveCount();
 
+    // === Popup notifikasi ===
     function showPopup(message) {
       const popup = document.getElementById('popup');
       popup.innerHTML = message;
@@ -108,6 +125,7 @@
       }, 30000); // hilang setelah 30 detik
     }
 
+    // === Update data mesin ===
     async function updateMachines() {
       try {
         const res = await fetch('/mesin-data');

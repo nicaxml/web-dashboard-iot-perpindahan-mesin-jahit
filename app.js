@@ -81,7 +81,6 @@ app.get('/admin/dashboard', isLoggedIn, (req, res) => {
 app.get('/admin/mesin', isLoggedIn, (req, res) => {
   db.query('SELECT * FROM mesin', (err, results) => {
     if (err) throw err;
-    // Kirim variabel 'mesin' ke EJS
     res.render('admin/mesin', { mesin: results });
   });
 });
@@ -97,7 +96,6 @@ app.get('/admin/riwayat', isLoggedIn, (req, res) => {
   db.query(sql, (err, results) => {
     if (err) throw err;
 
-    // Tambahkan kolom line_dari, line_ke, keterangan
     const riwayat = results.map(r => ({
       id_mesin: r.id_mesin,
       merk_mesin: r.merk_mesin,
@@ -112,12 +110,9 @@ app.get('/admin/riwayat', isLoggedIn, (req, res) => {
         : '✓ Tidak ada perpindahan'
     }));
 
-    // Kirim variabel 'riwayat' ke EJS
     res.render('admin/riwayat', { riwayat });
   });
 });
-
-
 
 // === HALAMAN UTAMA (PUBLIC DASHBOARD) ===
 app.get('/', (req, res) => {
@@ -224,6 +219,32 @@ app.get('/count', (req, res) => {
     (err, result) => {
       if (err) return res.status(500).json({ total: 0 });
       res.json({ total: result[0].total });
+    }
+  );
+});
+
+// === TAMBAHAN ROUTE UNTUK TES VIA REST CLIENT ===
+app.post('/api/pindahMesin', (req, res) => {
+  const { id_mesin, dari_line, ke_line, keterangan } = req.body;
+  console.log('🔧 Data diterima dari REST Client:', req.body);
+
+  if (!id_mesin || !dari_line || !ke_line) {
+    return res.status(400).json({ success: false, message: 'Data tidak lengkap' });
+  }
+
+  // Simpan ke riwayat_pindah_mesin (mirip seperti /update)
+  db.query(
+    `INSERT INTO riwayat_pindah_mesin (id_mesin, line_sebelumnya, line_sekarang, status_pindah, waktu_pindah, keterangan)
+     VALUES (?, ?, ?, 'Pindah', NOW(), ?)`,
+    [id_mesin, dari_line, ke_line, keterangan || 'Tes via API'],
+    (err) => {
+      if (err) return res.status(500).json({ success: false, message: err.message });
+      io.emit('updateNow');
+      res.json({
+        success: true,
+        message: 'Data perpindahan mesin berhasil disimpan melalui API',
+        data: { id_mesin, dari_line, ke_line, keterangan }
+      });
     }
   );
 });

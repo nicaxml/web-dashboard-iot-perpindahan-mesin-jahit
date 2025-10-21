@@ -1,0 +1,43 @@
+### ✅ CEK SERVER AKTIF
+GET http://localhost:3000/
+
+### ✅ LIHAT SEMUA DATA MESIN
+GET http://localhost:3000/mesin-data
+
+### ✅ LIHAT DATA RIWAYAT PERPINDAHAN
+GET http://localhost:3000/riwayat-data
+
+### ✅ LIHAT JUMLAH MESIN BERPINDAH HARI INI
+GET http://localhost:3000/count
+
+
+### 🆕 TAMBAH MESIN BARU
+POST http://localhost:3000/add-mesin
+Content-Type: application/json
+
+{
+  "merk_mesin": "Merk5",
+  "nomer_seri_mesin": "SN005",
+  "line_sekarang": "2A",
+  "kode_barcode": "BC005"
+}
+
+
+### 🔄 PINDAHKAN MESIN (UPDATE)
+POST http://localhost:3000/update
+Content-Type: application/json
+
+{
+  "id_mesin": 3,
+  "line_baru": "7A"
+}
+
+
+### 🔄 PINDAHKAN MESIN LAIN (COBA TEST)
+POST http://localhost:3000/update
+Content-Type: application/json
+
+{
+  "id_mesin": 2,
+  "line_baru": "5B"
+}

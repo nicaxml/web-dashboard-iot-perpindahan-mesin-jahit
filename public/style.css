@@ -51,24 +51,24 @@ hr {
   margin: 0;
 }
 
-/* Card container horizontal scroll */
+/* Container mesin */
 .card-container {
-  display: flex;             /* susun horizontal */
-  gap: 10px;                 /* jarak antar mesin */
-  overflow-x: auto;          /* scroll horizontal */
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
   padding: 5px 0;
   scroll-behavior: smooth;
 }
 
-/* card styling */
 .card {
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   padding: 8px;
   font-size: 11px;
-  min-width: 150px;          /* ukuran minimal */
-  flex: 0 0 auto;            /* jangan shrink/grow */
+  min-width: 150px;
+  flex: 0 0 auto;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
@@ -89,36 +89,80 @@ hr {
   font-size: 14px;
 }
 
-/* Scroll bar styling (optional) */
+/* Scroll bar */
 .card-container::-webkit-scrollbar {
   height: 8px;
 }
-
 .card-container::-webkit-scrollbar-thumb {
   background-color: #888;
   border-radius: 4px;
 }
-
 .card-container::-webkit-scrollbar-track {
   background-color: #f1f1f1;
 }
 
+/* === ANIMASI PERPINDAHAN === */
+@keyframes moveHighlight {
+  0% {
+    transform: scale(0.9);
+    background-color: #ffeb99;
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.02);
+    background-color: #fffaa1;
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    background-color: #ffffff;
+    opacity: 1;
+  }
+}
 
+/* Animasi masuk fade */
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(-6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 
-/* Popup notif */
-    #popup {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #fffae6;
-      border: 1px solid #f1c40f;
-      padding: 15px 25px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      z-index: 1000;
-      display: none;
-      font-weight: 600;
-      color: #333;
-      text-align: center;
-    }
+/* Animasi keluar fade */
+@keyframes fadeOut {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(8px); }
+}
+
+.move-animation {
+  animation: fadeIn 0.6s ease forwards;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.7);
+}
+
+.fade-out {
+  animation: fadeOut 0.4s ease forwards;
+}
+
+/* === POPUP NOTIFIKASI === */
+#popup {
+  position: fixed;
+  top: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff9c4;
+  border: 2px solid #f1c40f;
+  padding: 15px 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
+  display: none;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+#popup.show {
+  display: block;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

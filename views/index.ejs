@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sewing Machine Activity</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css" />
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <!-- Popup div -->
+  <!-- Popup notifikasi -->
   <div id="popup"></div>
 
   <div class="container">
@@ -26,6 +26,7 @@
       </div>
     </div>
 
+    <!-- GRID MESIN -->
     <div id="machineGrid">
       <% 
         const lines = [
@@ -34,7 +35,6 @@
           ["10A","10B"],["11A","11B"],["12B"],["13"],["14"]
         ];
         const lineNumbers = [1,2,3,4,5,6,7,8,10,11,12,13,14];
-
         const grouped = {};
         mesin.forEach(m => {
           const line = m.line_sekarang;
@@ -60,7 +60,7 @@
                       <small>Update: <%= m.update_time ? new Date(m.update_time).toLocaleString() : '-' %></small>
                     </div>
                     <% if (m.status_pindah === 'Pindah') { %>
-                      <p class="move">🚚 Pindah dari <b><%= m.line_sebelumnya || '-' %></b> ke <b><%= m.line_sekarang %></b></p>
+                      <p class="move move-highlight">🚚 Pindah dari <b><%= m.line_sebelumnya || '-' %></b> ke <b><%= m.line_sekarang %></b></p>
                     <% } else { %>
                       <p class="no-move">✓ Tidak ada perpindahan</p>
                     <% } %>
@@ -78,30 +78,28 @@
     const socket = io();
     const statusEl = document.querySelector('.status');
 
-    // === Indikator koneksi socket.io ===
+    // === Status koneksi ===
     socket.on('connect', () => {
       statusEl.textContent = '🟢 Connected';
       statusEl.style.color = 'green';
     });
-
     socket.on('disconnect', () => {
       statusEl.textContent = '🔴 Disconnected';
       statusEl.style.color = 'red';
     });
-
     socket.io.on('reconnect_attempt', () => {
       statusEl.textContent = '🟡 Reconnecting...';
       statusEl.style.color = 'orange';
     });
 
-    // === Update waktu setiap detik ===
+    // === Waktu realtime ===
     function updateTime() {
       document.getElementById('lastUpdate').innerText = new Date().toLocaleString();
     }
     setInterval(updateTime, 1000);
     updateTime();
 
-    // === Ambil jumlah mesin pindah ===
+    // === Hitung mesin pindah ===
     async function updateMoveCount() {
       try {
         const res = await fetch('/count');
@@ -111,67 +109,104 @@
         console.error('Gagal ambil count:', err);
       }
     }
-    setInterval(updateMoveCount, 5000);
+    // polling interval yang long sebagai fallback
+    setInterval(updateMoveCount, 10000);
     updateMoveCount();
 
-    // === Popup notifikasi ===
+    // === Popup Notifikasi ===
     function showPopup(message) {
       const popup = document.getElementById('popup');
       popup.innerHTML = message;
-      popup.style.display = 'block';
-
-      setTimeout(() => {
-        popup.style.display = 'none';
-      }, 30000); // hilang setelah 30 detik
+      popup.classList.add('show');
+      // pastikan clear timer sebelumnya jika ada
+      if (popup._timer) clearTimeout(popup._timer);
+      popup._timer = setTimeout(() => {
+        popup.classList.remove('show');
+      }, 4000);
     }
 
-    // === Update data mesin ===
-    async function updateMachines() {
+    // === Fungsi animasi pindah ===
+    function moveCard(card, newContainer) {
+      // safety: jika card tidak berada di DOM, skip
+      if (!card || !newContainer) return;
+      card.classList.add('fade-out');
+      card.addEventListener('animationend', () => {
+        card.classList.remove('fade-out');
+        // ubah heading line sekarang
+        const h4 = card.querySelector('h4');
+        if (h4) h4.innerText = card.dataset.subline;
+        // insert di depan
+        newContainer.insertBefore(card, newContainer.firstChild);
+        card.classList.add('move-animation');
+        setTimeout(() => card.classList.remove('move-animation'), 700); // singkat supaya smooth
+      }, { once: true });
+    }
+
+    // === Update DOM berdasarkan object mesin (dipakai oleh socket events) ===
+    function applyMachineUpdate(m) {
       try {
-        const res = await fetch('/mesin-data');
-        const mesinData = await res.json();
+        const id = m.id_mesin;
+        const cardId = `mesin-${id}`;
+        const card = document.getElementById(cardId);
+        const container = document.getElementById(`container-${m.line_sekarang}`);
 
-        mesinData.forEach(m => {
-          const card = document.getElementById(`mesin-${m.id_mesin}`);
-          const container = document.getElementById(`container-${m.line_sekarang}`);
-          if(card && container){
-            const prevStatus = card.dataset.status;
-            card.dataset.status = m.status_pindah;
-            card.querySelector('small').innerText = m.update_time ? new Date(m.update_time).toLocaleString() : '-';
+        // jika card belum ada -> tambahkan baru (mirip event newMachine)
+        if (!card) {
+          createMachineCard(m);
+          if (m.status_pindah === 'Pindah') {
+            showPopup(`🚚 Mesin <b>${m.merk_mesin}</b> (${m.nomer_seri_mesin}) berpindah ke ${m.line_sekarang}`);
+          }
+          updateMoveCount();
+          return;
+        }
 
-            const moveText = card.querySelector('.move, .no-move');
-            if(m.status_pindah === 'Pindah'){
-              moveText.className = 'move';
-              moveText.innerHTML = `🚚 Pindah dari <b>${m.line_sebelumnya || '-'}</b> ke <b>${m.line_sekarang}</b>`;
-              container.insertBefore(card, container.firstChild);
+        const prevSubline = card.dataset.subline;
+        card.dataset.status = m.status_pindah;
+        card.dataset.subline = m.line_sekarang;
+        // update timestamp
+        const small = card.querySelector('small');
+        if (small) small.innerText = m.update_time ? new Date(m.update_time).toLocaleString() : '-';
+        // update header
+        const h4 = card.querySelector('h4');
+        if (h4) h4.innerText = m.line_sekarang;
 
-              if(prevStatus !== 'Pindah') {
-                showPopup(`Mesin ${m.merk_mesin} (${m.nomer_seri_mesin}) pindah dari ${m.line_sebelumnya || '-'} ke ${m.line_sekarang}`);
-              }
-            } else {
-              moveText.className = 'no-move';
-              moveText.innerHTML = '✓ Tidak ada perpindahan';
+        // update move/no-move element
+        let moveText = card.querySelector('.move, .no-move');
+        if (!moveText) {
+          moveText = document.createElement('p');
+          card.appendChild(moveText);
+        }
+
+        if (m.status_pindah === 'Pindah') {
+          moveText.className = 'move move-highlight';
+          moveText.innerHTML = `🚚 Pindah dari <b>${m.line_sebelumnya || '-'}</b> ke <b>${m.line_sekarang}</b>`;
+
+          if (prevSubline !== m.line_sekarang) {
+            // pindahkan card ke container baru dengan animasi
+            if (container) {
+              moveCard(card, container);
+              showPopup(`🚚 Mesin <b>${m.merk_mesin}</b> (${m.nomer_seri_mesin}) berpindah dari ${m.line_sebelumnya || '-'} ke ${m.line_sekarang}`);
             }
           }
-        });
-      } catch(err){ console.error('Gagal update mesin:', err); }
+
+          // Hilangkan highlight setelah 10 detik
+          setTimeout(() => {
+            if (moveText) moveText.classList.remove('move-highlight');
+          }, 10000);
+        } else {
+          moveText.className = 'no-move';
+          moveText.innerHTML = '✓ Tidak ada perpindahan';
+        }
+      } catch (err) {
+        console.error('applyMachineUpdate error', err);
+      }
     }
 
-    setInterval(updateMachines, 5000);
-
-    // === REALTIME MESIN BARU & UPDATE MESIN ===
-    socket.on('updateNow', () => {
-      updateMoveCount();
-      updateMachines();
-    });
-
-    socket.on('newMachine', (m) => {
+    function createMachineCard(m) {
       const container = document.getElementById(`container-${m.line_sekarang}`);
-      if(!container) return;
-      if(document.getElementById(`mesin-${m.id_mesin}`)) return; // hindari duplikat
-
+      if (!container) return;
       const card = document.createElement('div');
-      card.className = 'card';
+      card.className = 'card move-animation';
       card.id = `mesin-${m.id_mesin}`;
       card.dataset.status = m.status_pindah;
       card.dataset.subline = m.line_sekarang;
@@ -180,19 +215,58 @@
         <p>${m.merk_mesin} - ${m.nomer_seri_mesin}</p>
         <div class="machine-info">
           <strong>ID Mesin: ${m.id_mesin}</strong><br>
-          <span>Barcode: ${m.kode_barcode}</span><br>
+          <span>Barcode: ${m.kode_barcode || ''}</span><br>
           <small>Update: ${m.update_time ? new Date(m.update_time).toLocaleString() : '-'}</small>
         </div>
-        ${m.status_pindah === 'Pindah' ?
-          `<p class="move">🚚 Pindah dari <b>${m.line_sebelumnya || '-'}</b> ke <b>${m.line_sekarang}</b></p>` :
-          `<p class="no-move">✓ Tidak ada perpindahan</p>`}
+        ${m.status_pindah === 'Pindah'
+          ? `<p class="move move-highlight">🚚 Pindah dari <b>${m.line_sebelumnya || '-'}</b> ke <b>${m.line_sekarang}</b></p>`
+          : `<p class="no-move">✓ Tidak ada perpindahan</p>`}
       `;
       container.insertBefore(card, container.firstChild);
-      updateMoveCount();
-
-      if(m.status_pindah === 'Pindah'){
-        showPopup(`Mesin ${m.merk_mesin} (${m.nomer_seri_mesin}) pindah dari ${m.line_sebelumnya || '-'} ke ${m.line_sekarang}`);
+      if (m.status_pindah === 'Pindah') {
+        const moveText = card.querySelector('.move');
+        setTimeout(() => moveText && moveText.classList.remove('move-highlight'), 10000);
       }
+      setTimeout(() => card.classList.remove('move-animation'), 700);
+    }
+
+    // === Update mesin realtime (fallback polling) ===
+    let pollingTimer = null;
+    async function updateMachinesPolling() {
+      try {
+        const res = await fetch('/mesin-data');
+        const mesinData = await res.json();
+        mesinData.forEach(m => {
+          // update DOM element jika ada perubahan
+          applyMachineUpdate(m);
+        });
+      } catch (err) {
+        console.error('Gagal update mesin (polling):', err);
+      }
+    }
+    // polling rendah-frekuensi sebagai safety net
+    setInterval(updateMachinesPolling, 15000);
+    // initial poll after load to sync any missed updates
+    updateMachinesPolling();
+
+    // === Event realtime dari server ===
+    socket.on('machineUpdated', (m) => {
+      // m adalah object mesin terbaru dari server
+      applyMachineUpdate(m);
+      updateMoveCount();
+    });
+
+    // === Mesin baru masuk ===
+    socket.on('newMachine', (m) => {
+      createMachineCard(m);
+      showPopup(`✨ Mesin baru: <b>${m.merk_mesin}</b> (${m.nomer_seri_mesin}) ditambahkan ke ${m.line_sekarang}`);
+      updateMoveCount();
+    });
+
+    // ===== Optional: Keep legacy updateNow support =====
+    socket.on('updateNow', () => {
+      updateMoveCount();
+      updateMachinesPolling();
     });
   </script>
 </body>

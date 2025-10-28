@@ -28,10 +28,9 @@ POST http://localhost:3000/update
 Content-Type: application/json
 
 {
-  "id_mesin": 3,
-  "line_baru": "7A"
+  "id_mesin": 36,
+  "line_baru": "1A"
 }
-
 
 ### 🔄 PINDAHKAN MESIN LAIN (COBA TEST)
 POST http://localhost:3000/update

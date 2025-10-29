@@ -56,31 +56,45 @@ function isLoggedIn(req, res, next) {
 // ============================
 // === HALAMAN LOGIN ADMIN (EJS) ===
 // ============================
+
+// === TAMPILAN LOGIN ===
 app.get('/login', (req, res) => {
   res.render('admin/login', { error: null });
 });
 
-// ✅ LOGIN DENGAN DATABASE (tanpa hash)
+// === LOGIN DENGAN HASH PASSWORD ===
 app.post('/login', (req, res) => {
   const { username, password } = req.body;
 
-  const sql = 'SELECT * FROM admin WHERE username = ? AND password = ?';
-  db.query(sql, [username, password], (err, results) => {
+  // Cek username di database
+  const sql = 'SELECT * FROM admin WHERE username = ?';
+  db.query(sql, [username], (err, results) => {
     if (err) {
       console.error('❌ Database error:', err);
       return res.render('admin/login', { error: 'Terjadi kesalahan server!' });
     }
 
-    if (results.length > 0) {
-      req.session.loggedIn = true;
-      req.session.username = results[0].username;
-      res.redirect('/admin/dashboard');
-    } else {
-      res.render('admin/login', { error: 'Username atau password salah!' });
+    // Jika username tidak ditemukan
+    if (results.length === 0) {
+      return res.render('admin/login', { error: 'Username tidak ditemukan!' });
     }
+
+    const user = results[0];
+
+    // Bandingkan password input dengan hash dari database
+    const isMatch = bcrypt.compareSync(password, user.password);
+    if (!isMatch) {
+      return res.render('admin/login', { error: 'Password salah!' });
+    }
+
+    // Jika cocok, buat session dan redirect
+    req.session.loggedIn = true;
+    req.session.username = user.username;
+    res.redirect('/admin/dashboard');
   });
 });
 
+// === LOGOUT ===
 app.get('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) {
@@ -90,6 +104,7 @@ app.get('/logout', (req, res) => {
     res.redirect('/login');
   });
 });
+
 
 // ============================
 // === HALAMAN DASHBOARD ADMIN ===
@@ -193,9 +208,9 @@ function verifyToken(req, res, next) {
   });
 }
 
-// === API GET DATA MESIN BERDASARKAN BARCODE & ID MASALAH ===
-app.get('/api/data/machine', verifyToken, (req, res) => {
-  const { barcode, id_masalah_mesin } = req.query;
+// === API POST DATA MESIN BERDASARKAN BARCODE & ID MASALAH ===
+app.post('/api/data/machine', verifyToken, (req, res) => {
+  const { barcode, id_masalah_mesin } = req.body; // ambil dari body JSON
 
   if (!barcode || !id_masalah_mesin) {
     return res.status(400).json({
@@ -205,32 +220,41 @@ app.get('/api/data/machine', verifyToken, (req, res) => {
 
   // cek validitas id_masalah_mesin
   db.query(
-    'SELECT id_masalah_mesin FROM masalah_mesin WHERE id_masalah_mesin = ?',
+    'SELECT * FROM masalah_mesin WHERE id_masalah_mesin = ?',
     [id_masalah_mesin],
-    (err, rows) => {
-      if (err) return res.status(500).json({ message: 'Database error' });
-      if (rows.length === 0)
+    (err, masalahRows) => {
+      if (err)
+        return res.status(500).json({ message: 'Database error (masalah_mesin)' });
+      if (masalahRows.length === 0)
         return res.status(404).json({ message: 'id_masalah_mesin tidak ditemukan' });
 
-      // ambil data mesin
-      db.query(
-        'SELECT id_mesin, line_sekarang FROM mesin WHERE kode_barcode = ?',
-        [barcode],
-        (err2, result) => {
-          if (err2) return res.status(500).json({ message: 'Database error' });
-          if (result.length === 0)
-            return res.status(404).json({ message: 'Mesin dengan barcode tidak ditemukan' });
+      // ambil semua data mesin berdasarkan barcode dan gabungkan dengan masalah_mesin
+      const query = `
+        SELECT 
+          m.*, 
+          mm.* 
+        FROM mesin m
+        JOIN masalah_mesin mm ON mm.id_masalah_mesin = ?
+        WHERE m.kode_barcode = ?;
+      `;
 
-          res.json({
-            message: 'Data ditemukan',
-            id_mesin: result[0].id_mesin,
-            line_sekarang: result[0].line_sekarang,
+      db.query(query, [id_masalah_mesin, barcode], (err2, result) => {
+        if (err2)
+          return res.status(500).json({ message: 'Database error (join)' });
+        if (result.length === 0)
+          return res.status(404).json({
+            message: 'Data mesin dengan barcode tersebut tidak ditemukan',
           });
-        }
-      );
+
+        res.json({
+          message: 'Data ditemukan',
+          data: result[0],
+        });
+      });
     }
   );
 });
+
 
 
 // ============================

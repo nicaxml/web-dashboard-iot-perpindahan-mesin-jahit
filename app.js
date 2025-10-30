@@ -209,6 +209,7 @@ function verifyToken(req, res, next) {
 }
 
 // === API POST DATA MESIN BERDASARKAN BARCODE & ID MASALAH ===
+// === API POST DATA MESIN BERDASARKAN BARCODE & ID MASALAH (Output hanya data mesin) ===
 app.post('/api/data/machine', verifyToken, (req, res) => {
   const { barcode, id_masalah_mesin } = req.body; // ambil dari body JSON
 
@@ -228,32 +229,25 @@ app.post('/api/data/machine', verifyToken, (req, res) => {
       if (masalahRows.length === 0)
         return res.status(404).json({ message: 'id_masalah_mesin tidak ditemukan' });
 
-      // ambil semua data mesin berdasarkan barcode dan gabungkan dengan masalah_mesin
-      const query = `
-        SELECT 
-          m.*, 
-          mm.* 
-        FROM mesin m
-        JOIN masalah_mesin mm ON mm.id_masalah_mesin = ?
-        WHERE m.kode_barcode = ?;
-      `;
-
-      db.query(query, [id_masalah_mesin, barcode], (err2, result) => {
+      // ambil data mesin saja berdasarkan barcode
+      const query = 'SELECT * FROM mesin WHERE kode_barcode = ?';
+      db.query(query, [barcode], (err2, mesinRows) => {
         if (err2)
-          return res.status(500).json({ message: 'Database error (join)' });
-        if (result.length === 0)
+          return res.status(500).json({ message: 'Database error (mesin)' });
+        if (mesinRows.length === 0)
           return res.status(404).json({
             message: 'Data mesin dengan barcode tersebut tidak ditemukan',
           });
 
         res.json({
-          message: 'Data ditemukan',
-          data: result[0],
+          message: 'Data mesin ditemukan',
+          data: mesinRows[0], // hanya data mesin
         });
       });
     }
   );
 });
+
 
 
 

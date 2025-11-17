@@ -208,7 +208,6 @@ function verifyToken(req, res, next) {
   });
 }
 
-// === API POST DATA MESIN BERDASARKAN BARCODE & ID MASALAH ===
 // === API POST DATA MESIN BERDASARKAN BARCODE & ID MASALAH (Output hanya data mesin) ===
 app.post('/api/data/machine', verifyToken, (req, res) => {
   const { barcode, id_masalah_mesin } = req.body; // ambil dari body JSON
